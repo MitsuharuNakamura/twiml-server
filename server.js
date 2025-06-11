@@ -10,19 +10,20 @@ const PORT = 5555;
 app.use(express.urlencoded({ extended: true }));
 
 // 外部APIのリクエスト
-async function checkExternalApi() {
+async function checkExternalApi(digits) {
   try {
-    const req_url = 'https://google.co.jp/';
+    const req_url = `http://numbersapi.com/${digits}`;
     const res = await axios.get(req_url);
     debug('API request succeeded');
-    return { success: true, data: 'リクエストは成功しました。' };
+    return { success: true, data: res.data};
   } catch (err) {
     debug('API request failed: %s', err.message);
     return { success: false, data: 'リクエストは失敗しました。' };
   }
 }
-
+///////////////////////////////////
 // a call comes inで指定したURLの処理
+//////////////////////////////////
 app.post('/voice', async (req, res) => {
   // リクエストをDebug出力
   debug('--- Incoming Request ---');
@@ -42,10 +43,19 @@ app.post('/voice', async (req, res) => {
   response.say('こんにちは、これはテスト通話です。', { language: launguage, voice: voice });
   response.pause({ length: pause_length });
 
-  const apiResult = await checkExternalApi();
-  debug('API result: %O', apiResult);
+  //Gather
+  const gather = response.gather({
+    input: 'dtmf',
+    numDgits: 2,
+    timeout:5,
+    action: '/voice-2ndflow',
+    method: 'POST'
+  });
+  gather.say('ダイヤルパッドで好きな数字を入力してください。', { language: launguage, voice: voice });
 
-  response.say(apiResult.data, { language: launguage, voice: voice });
+  //Timeoutの処理
+  response.say('入力が確認できませんでした。', { language: launguage, voice: voice })
+  //End Call
   response.say('これで通話を終了します。', { language: launguage, voice: voice });
   response.hangup();
 
@@ -53,6 +63,34 @@ app.post('/voice', async (req, res) => {
   res.send(response.toString());
 });
 
+///////////////////////////
+// 最初のGather後のフロー
+///////////////////////////
+app.post('/voice-2ndflow', async (req, res) => {
+  const response = new twiml.VoiceResponse();
+  const launguage = 'ja-JP';
+  const voice = 'Google.ja-JP-Chirp3-HD-Aoede';
+  const digits = req.body.Digits;
+
+  if(digits){
+    response.say(`入力された値は、${digits} です。`, { language: launguage, voice: voice });
+      // HTTP Request
+    const apiResult = await checkExternalApi(digits);
+    debug('API result: %O', apiResult);
+    response.say(apiResult.data, { language: launguage, voice: voice });
+
+  }
+  //End Call
+  response.say('これで通話を終了します。', { language: launguage, voice: voice });
+  response.hangup();
+  res.type('text/xml');
+  res.send(response.toString());
+
+});
+
+///////////////////////////
+// Listen
+///////////////////////////
 app.listen(PORT, () => {
   console.log(`TwiML server running at http://localhost:${PORT}/voice`);
 });
