@@ -46,7 +46,7 @@ app.post('/voice', async (req, res) => {
   //Gather
   const gather = response.gather({
     input: 'dtmf',
-    numDgits: 2,
+    numDigits: 4,
     timeout:5,
     action: '/voice-2ndflow',
     method: 'POST'
@@ -85,7 +85,6 @@ app.post('/voice-2ndflow', async (req, res) => {
   response.hangup();
   res.type('text/xml');
   res.send(response.toString());
-
 });
 
 ///////////////////////////
