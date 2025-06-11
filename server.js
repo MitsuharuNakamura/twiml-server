@@ -36,27 +36,27 @@ app.post('/voice', async (req, res) => {
   debug('------------------------');
 
   const response = new twiml.VoiceResponse();
-  const launguage = 'ja-JP';
+  const language = 'ja-JP';
   const voice = 'Google.ja-JP-Chirp3-HD-Aoede';
   const pause_length = 5;
 
-  response.say('こんにちは、これはテスト通話です。', { language: launguage, voice: voice });
+  response.say('こんにちは、これはテスト通話です。', { language: language, voice: voice });
   response.pause({ length: pause_length });
 
   //Gather
   const gather = response.gather({
     input: 'dtmf',
-    numDigits: 4,
+    numDigits: 2,
     timeout:5,
     action: '/voice-2ndflow',
     method: 'POST'
   });
-  gather.say('ダイヤルパッドで好きな数字を入力してください。', { language: launguage, voice: voice });
+  gather.say('ダイヤルパッドで好きな数字を入力してください。', { language: language, voice: voice });
 
   //Timeoutの処理
-  response.say('入力が確認できませんでした。', { language: launguage, voice: voice })
+  response.say('入力が確認できませんでした。', { language: language, voice: voice })
   //End Call
-  response.say('これで通話を終了します。', { language: launguage, voice: voice });
+  response.say('これで通話を終了します。', { language: language, voice: voice });
   response.hangup();
 
   res.type('text/xml');
@@ -68,20 +68,20 @@ app.post('/voice', async (req, res) => {
 ///////////////////////////
 app.post('/voice-2ndflow', async (req, res) => {
   const response = new twiml.VoiceResponse();
-  const launguage = 'ja-JP';
+  const language = 'ja-JP';
   const voice = 'Google.ja-JP-Chirp3-HD-Aoede';
   const digits = req.body.Digits;
 
   if(digits){
-    response.say(`入力された値は、${digits} です。`, { language: launguage, voice: voice });
+    response.say(`入力された値は、${digits} です。`, { language: language, voice: voice });
       // HTTP Request
     const apiResult = await checkExternalApi(digits);
     debug('API result: %O', apiResult);
-    response.say(apiResult.data, { language: launguage, voice: voice });
+    response.say(apiResult.data, { language: language, voice: voice });
 
   }
   //End Call
-  response.say('これで通話を終了します。', { language: launguage, voice: voice });
+  response.say('これで通話を終了します。', { language: language, voice: voice });
   response.hangup();
   res.type('text/xml');
   res.send(response.toString());
